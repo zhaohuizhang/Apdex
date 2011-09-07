@@ -2,6 +2,7 @@ package apdex.data;
 
 import java.net.UnknownHostException;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,10 @@ import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
 
 public class DataOpt {
+	String driver = "com.mysql.jdbc.Driver";
+	String url = "jdbc:MySQL://10.50.12.2:3306/apdexdb";
+	String user = "root";
+	String password = "1234";
 	int id = 0;
 
 	public void ReadMongo() {
@@ -143,10 +148,7 @@ public class DataOpt {
 
 	public void ToMySQL(DataStruct datas) throws SQLException {
 
-		String driver = "com.mysql.jdbc.Driver";
-		String url = "jdbc:MySQL://10.50.12.2:3306/apdexdb";
-		String user = "root";
-		String password = "1234";
+		
 		try {
 			Class.forName(driver);
 			Connection conn = (Connection) DriverManager.getConnection(url,
@@ -205,11 +207,55 @@ public class DataOpt {
 		}
 
 	}
+	
+	public void ToPageinfo() throws SQLException{
+		try {
+			Class.forName(driver);
+			Connection conn = (Connection) DriverManager.getConnection(url,
+					user, password);
+			if (!conn.isClosed()) {
+				System.out.println("Succeeded connecting to the Database!");
+			} else {
+				System.out.println("Falled connecting to the Database!");
+			}
+			Statement stmt = (Statement) conn.createStatement();
+			String query1 = "select * from elements";
+			ResultSet rs = stmt.executeQuery(query1);
+			int p = 0;
+			while(rs.next()){
+				String con_type = rs.getString("content_type");
+				String referrer = rs.getString("referrer");
+				System.out.println(con_type);
+				System.out.println(referrer);
+				
+				if(con_type.indexOf("html")!=-1){
+					String url = rs.getString("host")+rs.getString("uri");
+					System.out.println("_____"+url);
+					String query2 = "select * from pageinfo where url='"+url+"'";
+					System.out.println(query2);
+					Statement stmt1 = (Statement) conn.createStatement();
+					ResultSet rs1 = stmt1.executeQuery(query2);
+					if(!rs1.next()){
+						Statement stmt2 = (Statement) conn.createStatement();
+						String insert1 = "insert into pageinfo(id,url) values("+p+",'"+url+"')";
+						stmt2.executeUpdate(insert1);
+						p++;
+					}
+				}
+			}
+		
+			
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws SQLException {
 		long starttime = System.currentTimeMillis();
 		DataOpt dataopt = new DataOpt();
-		dataopt.ReadMongo();
+//		dataopt.ReadMongo();
+		dataopt.ToPageinfo();
 		long endtime = System.currentTimeMillis();
 		System.out.println(endtime - starttime);
 	}
